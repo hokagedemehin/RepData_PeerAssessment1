@@ -1,25 +1,92 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+REPRODUCABLE ASSIGNMENT
+========================
 
+1. Loading and Processing the Data
+==================================
 
-## Loading and preprocessing the data
+```{r, echo=TRUE}
+new_data<-read.csv('activity.csv')
 
+new_data[,2]<-as.Date(as.character(new_data[,2]))
 
+str(new_data)
+```
 
-## What is mean total number of steps taken per day?
+2.What is the mean total number of steps taken per day
+=======================================================
 
+```{r, echo=TRUE}
+daily_steps<-tapply(new_data$steps,new_data$date,sum,na.rm=TRUE)
+barplot(daily_steps)
+mean(daily_steps)
+median(daily_steps)
+```
 
+3. What is the average daily activity pattern
+=============================================
 
-## What is the average daily activity pattern?
+```{r, echo=TRUE}
+interval_steps<-tapply(new_data$steps,new_data$interval,mean,na.rm=TRUE)
+intervals<-new_data$interval[1:288]
+plot(intervals,interval_steps,type='l', xlab = '5-minutes interval',
+     ylab = 'average steps across all days')
+joined_data<-data.frame(intervals,interval_steps)
+subset(joined_data, interval_steps==max(joined_data[,2]))
 
+```
 
+835 minute has the highest number of steps of about 206.1698
 
-## Imputing missing values
+4. Imputting Missing Values
+===========================
 
+```{r, echo=TRUE}
+new_data2<-new_data
+total_NA<-sum(is.na(new_data2$steps))
 
+interval_steps2<-tapply(new_data2$steps,new_data2$interval,mean,na.rm=TRUE)
 
-## Are there differences in activity patterns between weekdays and weekends?
+means<-as.numeric(rep(interval_steps2,288))
+
+for(i in 1:17568){
+  if(is.na(new_data2[i,1])){
+    new_data2[i,1]<-means[i]
+  }
+  
+}
+str(new_data2)
+head(new_data2)
+daily_steps2<-tapply(new_data2$steps,new_data2$date,sum,na.rm=TRUE)
+
+barplot(daily_steps2)
+mean(daily_steps2)
+median(daily_steps2)
+```
+
+There is a change in the mean and median of the total steps taken daily
+
+The impact of imputting values gave us a higher mean and median
+
+4. Are there differences in activity patterns between weekdays and weekends
+===============================================================
+
+```{r, echo=TRUE}
+library(ggplot2)
+new_data2$days<-weekdays(new_data2$date)
+
+for(i in 1:17568){
+  if(new_data2[i,4]=='Saturday'){
+    new_data2[i,4]='Weekend'
+  }
+  else if(new_data2[i,4]=='Sunday'){
+    new_data2[i,4]='Weekend'
+  }
+  else new_data2[i,4]='Weekday'
+}
+new_data2$days=as.factor(new_data2$days)
+str(new_data2)
+head(new_data2)
+
+ggplot(aes(interval,steps), data=new_data2) + geom_line() + facet_grid(days~.)
+```
+
